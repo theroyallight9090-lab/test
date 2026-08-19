@@ -1,47 +1,6 @@
 (() => {
   const API_URL = "https://royal-light-chat.theroyallight9090.workers.dev/chat";
   const TURNSTILE_SITE_KEY = "0x4AAAAAAEVRBGuNy_j-8G94";
-  const LOGO_URL = "image/logo/trl.png";
-
-  // ---------- Bilingual UI strings ----------
-  // Only the widget's own chrome (labels, placeholder, greeting) is
-  // translated here. The assistant's actual replies already come back in
-  // whichever language the visitor typed in, straight from the model.
-  const STRINGS = {
-    en: {
-      dir: "ltr",
-      title: "Royal Light Assistant",
-      subtitle: "Lighting help",
-      placeholder: "Ask about lighting products…",
-      send: "Send",
-      imageLabel: "Upload product image",
-      close: "Close chat",
-      open: "Open AI chat",
-      greeting: "Hello! I'm the Royal Light assistant. How can I help with your lighting project?",
-      removeImage: "Remove image",
-      viewProduct: "View product",
-      catalogueProduct: "Catalogue product",
-      langToggle: "العربية",
-    },
-    ar: {
-      dir: "rtl",
-      title: "مساعد رويال لايت",
-      subtitle: "مساعدة في الإضاءة",
-      placeholder: "اسأل عن منتجات الإضاءة…",
-      send: "إرسال",
-      imageLabel: "رفع صورة المنتج",
-      close: "إغلاق المحادثة",
-      open: "افتح المحادثة",
-      greeting: "مرحباً! أنا مساعد رويال لايت. كيف يمكنني مساعدتك في مشروع الإضاءة؟",
-      removeImage: "إزالة الصورة",
-      viewProduct: "عرض المنتج",
-      catalogueProduct: "منتج من الكتالوج",
-      langToggle: "English",
-    },
-  };
-
-  let lang = (navigator.language || "en").toLowerCase().startsWith("ar") ? "ar" : "en";
-  const t = () => STRINGS[lang];
 
   const style = document.createElement("style");
   style.textContent = `
@@ -60,53 +19,22 @@
       box-shadow: 0 18px 55px rgba(0,0,0,.28);
     }
     #trl-chat-panel.trl-open { display: grid; }
-    #trl-chat-panel[dir="rtl"] .trl-user { margin-left: 0; margin-right: auto; border-bottom-right-radius: 14px; border-bottom-left-radius: 4px; }
     .trl-chat-header {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 16px; background: #111; color: #fff; gap: 10px;
+      padding: 14px 16px; background: #111; color: #fff;
     }
-    .trl-chat-header-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .trl-chat-header-avatar {
-      width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px;
-      background: #c9a24d; display: grid; place-items: center; overflow: hidden;
-    }
-    .trl-chat-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .trl-chat-header strong { display: block; font-size: 15px; }
     .trl-chat-header small { color: #d7bd84; }
-    .trl-chat-header-actions { display: flex; align-items: center; gap: 4px; flex: 0 0 auto; }
-    #trl-lang-toggle {
-      border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff;
-      font-size: 11px; font-weight: 600; border-radius: 12px; padding: 4px 9px; cursor: pointer;
-    }
-    #trl-chat-close { border: 0; background: transparent; color: #fff; font-size: 25px; cursor: pointer; line-height: 1; }
+    #trl-chat-close { border: 0; background: transparent; color: #fff; font-size: 25px; cursor: pointer; }
     #trl-chat-messages { overflow-y: auto; padding: 14px; background: #f7f7f7; }
-    .trl-row { display: flex; align-items: flex-end; gap: 8px; margin: 0 0 10px; }
-    .trl-row.trl-row-user { justify-content: flex-end; }
-    #trl-chat-panel[dir="rtl"] .trl-row.trl-row-user { justify-content: flex-start; }
-    .trl-avatar {
-      width: 26px; height: 26px; border-radius: 50%; flex: 0 0 26px;
-      background: #111; display: grid; place-items: center; overflow: hidden;
-    }
-    .trl-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .trl-message {
-      max-width: 78%; padding: 10px 12px;
+      max-width: 84%; margin: 0 0 10px; padding: 10px 12px;
       border-radius: 14px; line-height: 1.45; font-size: 14px; white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
     .trl-bot { background: #fff; border: 1px solid #e2e2e2; border-bottom-left-radius: 4px; }
     .trl-user { margin-left: auto; background: #c9a24d; color: #111; border-bottom-right-radius: 4px; }
     .trl-user-image { display: block; width: 180px; max-width: 100%; margin-bottom: 7px; border-radius: 9px; }
-    .trl-typing { display: inline-flex; align-items: center; gap: 4px; padding: 4px 2px; }
-    .trl-typing span {
-      width: 6px; height: 6px; border-radius: 50%; background: #b7ab94;
-      animation: trl-bounce 1.2s infinite ease-in-out;
-    }
-    .trl-typing span:nth-child(2) { animation-delay: .15s; }
-    .trl-typing span:nth-child(3) { animation-delay: .3s; }
-    @keyframes trl-bounce {
-      0%, 60%, 100% { transform: translateY(0); opacity: .5; }
-      30% { transform: translateY(-4px); opacity: 1; }
-    }
     #trl-image-preview {
       display: none; align-items: center; gap: 9px; padding: 8px 12px;
       border-top: 1px solid #eee; background: #fff; font-size: 12px;
@@ -132,8 +60,7 @@
       border: 1px solid #ccc; border-radius: 50%; background: #fff; cursor: pointer;
       font-size: 18px;
     }
-    .trl-product-list { display: grid; gap: 9px; margin: 4px 0 12px 34px; }
-    #trl-chat-panel[dir="rtl"] .trl-product-list { margin: 4px 34px 12px 0; }
+    .trl-product-list { display: grid; gap: 9px; margin: 4px 0 12px; }
     .trl-product-card {
       display: grid; grid-template-columns: 72px 1fr; gap: 10px; padding: 9px;
       border: 1px solid #ddd; border-radius: 12px; background: #fff;
@@ -155,36 +82,30 @@
   const panel = document.createElement("section");
   panel.id = "trl-chat-panel";
   panel.setAttribute("aria-label", "Royal Light AI assistant");
-  panel.dir = t().dir;
   panel.innerHTML = `
     <header class="trl-chat-header">
-      <div class="trl-chat-header-info">
-        <div class="trl-chat-header-avatar"><img src="${LOGO_URL}" alt=""></div>
-        <div><strong id="trl-title"></strong><small id="trl-subtitle"></small></div>
-      </div>
-      <div class="trl-chat-header-actions">
-        <button id="trl-lang-toggle" type="button"></button>
-        <button id="trl-chat-close" type="button">×</button>
-      </div>
+      <div><strong>Royal Light Assistant</strong><small>Lighting help • English / العربية</small></div>
+      <button id="trl-chat-close" type="button" aria-label="Close chat">×</button>
     </header>
     <div id="trl-chat-messages" aria-live="polite"></div>
     <div id="trl-image-preview">
       <img alt="Selected product">
       <span></span>
-      <button id="trl-image-remove" type="button">×</button>
+      <button id="trl-image-remove" type="button" aria-label="Remove image">×</button>
     </div>
     <div id="trl-turnstile-wrap"><div id="trl-turnstile"></div></div>
     <form id="trl-chat-form">
-      <label id="trl-image-button" for="trl-chat-image" title="Upload product image">📷</label>
+      <label id="trl-image-button" for="trl-chat-image" aria-label="Upload product image" title="Upload product image">📷</label>
       <input id="trl-chat-image" type="file" accept="image/jpeg,image/png,image/webp" hidden>
-      <input id="trl-chat-input" maxlength="800" autocomplete="off">
-      <button id="trl-chat-send" type="submit" disabled></button>
+      <input id="trl-chat-input" maxlength="800" autocomplete="off" placeholder="Ask about lighting products…" aria-label="Message">
+      <button id="trl-chat-send" type="submit" disabled>Send</button>
     </form>
   `;
 
   const launcher = document.createElement("button");
   launcher.id = "trl-chat-launcher";
   launcher.type = "button";
+  launcher.setAttribute("aria-label", "Open AI chat");
   launcher.setAttribute("aria-expanded", "false");
   launcher.textContent = "✦";
 
@@ -200,8 +121,6 @@
   const imagePreviewPhoto = imagePreview.querySelector("img");
   const imagePreviewName = imagePreview.querySelector("span");
   const imageRemove = panel.querySelector("#trl-image-remove");
-  const langToggle = panel.querySelector("#trl-lang-toggle");
-  const imageButton = panel.querySelector("#trl-image-button");
 
   let history = [];
   let turnstileToken = "";
@@ -209,75 +128,17 @@
   let busy = false;
   let selectedImage = null;
 
-  function applyStrings() {
-    const s = t();
-    panel.dir = s.dir;
-    panel.setAttribute("aria-label", s.title);
-    panel.querySelector("#trl-title").textContent = s.title;
-    panel.querySelector("#trl-subtitle").textContent = `${s.subtitle} • English / العربية`;
-    langToggle.textContent = s.langToggle;
-    close.setAttribute("aria-label", s.close);
-    launcher.setAttribute("aria-label", s.open);
-    input.placeholder = s.placeholder;
-    input.setAttribute("aria-label", s.title);
-    send.textContent = s.send;
-    imageButton.setAttribute("aria-label", s.imageLabel);
-    imageButton.title = s.imageLabel;
-    imageRemove.setAttribute("aria-label", s.removeImage);
-  }
-  applyStrings();
-
-  function avatar(role) {
-    const el = document.createElement("div");
-    el.className = "trl-avatar";
-    if (role === "assistant") {
-      el.innerHTML = `<img src="${LOGO_URL}" alt="">`;
-    } else {
-      el.style.visibility = "hidden"; // keeps user bubbles aligned without a visible avatar
-    }
-    return el;
-  }
-
   function addMessage(role, text) {
-    const row = document.createElement("div");
-    row.className = `trl-row ${role === "user" ? "trl-row-user" : ""}`;
-
     const bubble = document.createElement("div");
     bubble.className = `trl-message ${role === "user" ? "trl-user" : "trl-bot"}`;
     bubble.dir = "auto";
     bubble.textContent = text;
-
-    if (role === "user") {
-      row.appendChild(bubble);
-    } else {
-      row.appendChild(avatar("assistant"));
-      row.appendChild(bubble);
-    }
-
-    messages.appendChild(row);
-    messages.scrollTop = messages.scrollHeight;
-    return bubble;
-  }
-
-  function addTypingIndicator() {
-    const row = document.createElement("div");
-    row.className = "trl-row";
-    row.appendChild(avatar("assistant"));
-
-    const bubble = document.createElement("div");
-    bubble.className = "trl-message trl-bot";
-    bubble.innerHTML = `<span class="trl-typing"><span></span><span></span><span></span></span>`;
-
-    row.appendChild(bubble);
-    messages.appendChild(row);
+    messages.appendChild(bubble);
     messages.scrollTop = messages.scrollHeight;
     return bubble;
   }
 
   function addImageMessage(text, previewUrl) {
-    const row = document.createElement("div");
-    row.className = "trl-row trl-row-user";
-
     const bubble = document.createElement("div");
     bubble.className = "trl-message trl-user";
     bubble.dir = "auto";
@@ -289,8 +150,7 @@
     bubble.appendChild(image);
 
     if (text) bubble.appendChild(document.createTextNode(text));
-    row.appendChild(bubble);
-    messages.appendChild(row);
+    messages.appendChild(bubble);
     messages.scrollTop = messages.scrollHeight;
   }
 
@@ -311,12 +171,12 @@
       const name = document.createElement("strong");
       name.textContent = product.name;
       const code = document.createElement("small");
-      code.textContent = product.code || product.category || t().catalogueProduct;
+      code.textContent = product.code || product.category || "Catalogue product";
       const link = document.createElement("a");
       link.href = product.url;
       link.target = "_blank";
       link.rel = "noopener";
-      link.textContent = t().viewProduct;
+      link.textContent = "View product";
 
       details.append(name, code, link);
       card.append(image, details);
@@ -423,14 +283,13 @@
     }
   }
 
-  addMessage("assistant", t().greeting);
+  addMessage(
+    "assistant",
+    "Hello! I’m the Royal Light assistant. How can I help with your lighting project?",
+  );
 
   launcher.addEventListener("click", () => setOpen(!panel.classList.contains("trl-open")));
   close.addEventListener("click", () => setOpen(false));
-  langToggle.addEventListener("click", () => {
-    lang = lang === "en" ? "ar" : "en";
-    applyStrings();
-  });
   input.addEventListener("input", updateSendButton);
   imageRemove.addEventListener("click", clearSelectedImage);
   imageInput.addEventListener("change", async () => {
@@ -467,7 +326,7 @@
     clearSelectedImage();
     busy = true;
     updateSendButton();
-    const waiting = addTypingIndicator();
+    const waiting = addMessage("assistant", "Thinking…");
 
     try {
       const response = await fetch(API_URL, {
@@ -485,12 +344,10 @@
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Chat request failed");
 
-      waiting.dir = "auto";
       waiting.textContent = data.reply;
       history.push({ role: "assistant", content: data.reply });
       renderProductCards(data.products);
     } catch (error) {
-      waiting.dir = "auto";
       waiting.textContent = `${error.message}. You can WhatsApp us on +974 5557 7303.`;
     } finally {
       busy = false;

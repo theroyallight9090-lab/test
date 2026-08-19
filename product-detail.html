@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Product Details - The Royal Light</title>
-  <meta name="description" content="Product specifications, images and details from The Royal Light's lighting catalogue in Doha, Qatar.">
 
   <link rel="icon" type="image/png" href="image/logo/trl.png" />
   <link rel="stylesheet" href="style.css" />
@@ -962,16 +961,19 @@ fetch("products.csv")
     return res.text();
   })
   .then(text => {
-    const rows = parseCSV(text.trim());
-    const headers = rows.shift().map(h => h.trim());
-
-    const allProducts = rows
-      .map((values, index) => {
-        const product = { id: index };
-        headers.forEach((header, i) => { product[header] = (values[i] || "").trim(); });
-        return product;
-      })
-      .filter(p => p.name);
+    const rows = text.trim().split("\n");
+    const headers = rows.shift().split(",");
+    
+    const allProducts = rows.map((row, index) => {
+      const values = row.split(",").map(f => f.trim());
+      const product = { id: index };
+      
+      headers.forEach((header, i) => {
+        product[header.trim()] = values[i] || '';
+      });
+      
+      return product;
+    });
 
     console.log("✅ Loaded " + allProducts.length + " products");
     
@@ -984,21 +986,11 @@ fetch("products.csv")
     // Load all categories section
     loadAllCategories(categories, allProducts);
     
-    // If we're on the detail page, load the product.
-    // Prefer the stable product_code (?code=) so links keep working even
-    // after the CSV is re-sorted or edited. ?id= (row index) is kept only
-    // as a fallback for older/shared links that predate product_code.
+    // If we're on the detail page, load the product
     const urlParams = new URLSearchParams(window.location.search);
-    const codeParam = (urlParams.get('code') || '').trim().toLowerCase();
-    let product = codeParam
-      ? allProducts.find(p => (p.product_code || '').trim().toLowerCase() === codeParam)
-      : null;
-
-    if (!product) {
-      const productId = parseInt(urlParams.get('id'));
-      product = allProducts.find(p => p.id === productId);
-    }
-
+    const productId = parseInt(urlParams.get('id'));
+    const product = allProducts.find(p => p.id === productId);
+    
     if (product) {
       loadProductDetails(product);
       loadRelatedProducts(product.category, productId, allProducts);
@@ -1207,46 +1199,6 @@ function updateSpecifications(product) {
   });
 }
 
-// Proper CSV parser: handles quoted fields that themselves contain commas
-// or line breaks (e.g. a product description with "dimmable, IP65").
-// A naive text.split(",") silently misaligns every column after such a
-// field, so this is used everywhere products.csv is read.
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') { quoted = false; }
-      else { field += c; }
-    } else if (c === '"') {
-      quoted = true;
-    } else if (c === ",") {
-      row.push(field); field = "";
-    } else if (c === "\n") {
-      row.push(field); rows.push(row); row = []; field = "";
-    } else if (c !== "\r") {
-      field += c;
-    }
-  }
-  if (field || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
-
-// Build a stable link reference for a product: prefer the catalogue
-// product_code (survives CSV row reordering/edits) and fall back to the
-// row-index id only for older products that have no code yet.
-function getProductLink(p) {
-  const code = (p.product_code || '').trim();
-  return code
-    ? `product-detail.html?code=${encodeURIComponent(code)}`
-    : `product-detail.html?id=${p.id}`;
-}
-
 // ==========================================
 // LOAD RELATED PRODUCTS
 // ==========================================
@@ -1289,7 +1241,7 @@ function loadRelatedProducts(category, currentId, allProducts) {
     card.appendChild(details);
     
     card.onclick = () => {
-      window.location.href = getProductLink(p);
+      window.location.href = `product-detail.html?id=${p.id}`;
     };
     
     container.appendChild(card);

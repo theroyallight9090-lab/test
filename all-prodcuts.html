@@ -4,11 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>All Products - The Royal Light</title>
-  <meta name="description" content="Browse The Royal Light's full catalogue: chandeliers, LED downlights, strip lights, flood lights, high-bay lights, street lights and more from LORDEX and other leading brands.">
-  <meta property="og:title" content="Products - The Royal Light">
-  <meta property="og:description" content="Chandeliers, LED downlights, strip lights, flood lights, high-bay lights, street lights and more from LORDEX and other leading brands.">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://theroyallights.com/all-prodcuts.html">
 
   <link rel="icon" type="image/png" href="image/logo/trl.png" />
   <link rel="stylesheet" href="style.css" />
@@ -785,46 +780,6 @@ function escapeHTML(str) {
     .replace(/'/g, "&#39;");
 }
 
-// Proper CSV parser: handles quoted fields that themselves contain commas
-// or line breaks (e.g. a product description with "dimmable, IP65").
-// A naive text.split(",") silently misaligns every column after such a
-// field, so this is used everywhere products.csv is read.
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') { quoted = false; }
-      else { field += c; }
-    } else if (c === '"') {
-      quoted = true;
-    } else if (c === ",") {
-      row.push(field); field = "";
-    } else if (c === "\n") {
-      row.push(field); rows.push(row); row = []; field = "";
-    } else if (c !== "\r") {
-      field += c;
-    }
-  }
-  if (field || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
-
-// Build a stable link reference for a product: prefer the catalogue
-// product_code (survives CSV row reordering/edits) and fall back to the
-// row-index id only for older products that have no code yet.
-function getProductLink(p) {
-  const code = (p.product_code || '').trim();
-  return code
-    ? `product-detail.html?code=${encodeURIComponent(code)}`
-    : `product-detail.html?id=${p.id}`;
-}
-
 function capitalizeFirst(str) {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -855,16 +810,19 @@ fetch("products.csv")
     return res.text();
   })
   .then(text => {
-    const rows = parseCSV(text.trim());
-    const headers = rows.shift().map(h => h.trim());
-
-    allProducts = rows
-      .map((values, index) => {
-        const product = { id: index };
-        headers.forEach((header, i) => { product[header] = (values[i] || "").trim(); });
-        return product;
-      })
-      .filter(p => p.name);
+    const rows = text.trim().split("\n");
+    const headers = rows.shift().split(",");
+    
+    allProducts = rows.map((row, index) => {
+      const values = row.split(",").map(f => f.trim());
+      const product = { id: index };
+      
+      headers.forEach((header, i) => {
+        product[header.trim()] = values[i] || '';
+      });
+      
+      return product;
+    });
 
     console.log("✅ Loaded " + allProducts.length + " products");
     
@@ -994,7 +952,7 @@ function renderCategory(category, products) {
       `;
       
       card.addEventListener('click', () => {
-        window.location.href = getProductLink(p);
+        window.location.href = `product-detail.html?id=${p.id}`;
       });
       
       productsContainer.appendChild(card);

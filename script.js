@@ -147,44 +147,31 @@ const contactForm = document.getElementById('contact-form');
 const successMessage = document.getElementById('success-message');
 const submitBtn = document.getElementById('submit-btn');
 
-// Same Worker that powers the AI chat also exposes a /contact endpoint
-// (see worker.js). Keeping it on one Worker avoids standing up a second
-// backend just for this form.
-const CONTACT_API_URL = "https://royal-light-chat.theroyallight9090.workers.dev/contact";
-
 if (contactForm) {
-  contactForm.addEventListener('submit', async (e) => {
+  contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
 
-    const payload = {
-      name: document.getElementById('name').value.trim(),
-      email: document.getElementById('email').value.trim(),
-      phone: document.getElementById('phone').value.trim(),
-      company: document.getElementById('company').value.trim(),
-      subject: document.getElementById('subject').value,
-      message: document.getElementById('message').value.trim(),
-    };
+    // Get form values
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    const company = document.getElementById('company').value;
+    const subject = document.getElementById('subject').value;
+    const message = document.getElementById('message').value;
 
+    // Show loading state
     const btnText = submitBtn.querySelector('.btn-text');
     const btnLoader = submitBtn.querySelector('.btn-loader');
-    const errorBox = document.getElementById('contact-error');
-
     btnText.style.display = 'none';
     btnLoader.style.display = 'flex';
     submitBtn.disabled = true;
-    if (errorBox) errorBox.style.display = 'none';
 
-    try {
-      const response = await fetch(CONTACT_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || 'Message could not be sent');
-
-      // Hide form, show success
+    // Simulate form submission (replace with actual API call)
+    setTimeout(() => {
+      // Hide form
       contactForm.style.display = 'none';
+      
+      // Show success message
       successMessage.style.display = 'block';
 
       // Reset form after 5 seconds
@@ -196,17 +183,7 @@ if (contactForm) {
         btnLoader.style.display = 'none';
         submitBtn.disabled = false;
       }, 5000);
-    } catch (error) {
-      btnText.style.display = 'flex';
-      btnLoader.style.display = 'none';
-      submitBtn.disabled = false;
-      if (errorBox) {
-        errorBox.textContent = `Sorry, your message could not be sent (${error.message}). Please WhatsApp us at +974 5557 7303 or email info@theroyallights.com instead.`;
-        errorBox.style.display = 'block';
-      } else {
-        alert(`Sorry, your message could not be sent. Please WhatsApp us at +974 5557 7303 or email info@theroyallights.com instead.`);
-      }
-    }
+    }, 2000);
   });
 }
 
@@ -214,36 +191,6 @@ if (contactForm) {
 // PRODUCTS - DYNAMIC LOADING (if CSV exists)
 // ==========================================
 let allProducts = [];
-
-// Proper CSV parser: handles quoted fields that themselves contain commas
-// or line breaks (e.g. a product description with "dimmable, IP65").
-// A naive text.split(",") silently misaligns every column after such a
-// field, so this is used everywhere products.csv is read.
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (c === '"') { quoted = false; }
-      else { field += c; }
-    } else if (c === '"') {
-      quoted = true;
-    } else if (c === ",") {
-      row.push(field); field = "";
-    } else if (c === "\n") {
-      row.push(field); rows.push(row); row = []; field = "";
-    } else if (c !== "\r") {
-      field += c;
-    }
-  }
-  if (field || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
 
 function escapeHTML(str) {
   if (!str) return "";
@@ -265,16 +212,13 @@ if (productsContainer) {
       return res.text();
     })
     .then(text => {
-      const rows = parseCSV(text.trim());
-      const headers = rows.shift().map(h => h.trim());
+      const rows = text.trim().split("\n");
+      rows.shift(); // remove header
 
-      allProducts = rows
-        .map(values => {
-          const product = {};
-          headers.forEach((header, i) => { product[header] = (values[i] || "").trim(); });
-          return product;
-        })
-        .filter(p => p.name);
+      allProducts = rows.map(row => {
+        const [name, description, image, category] = row.split(",").map(f => f.trim());
+        return { name, description, image, category };
+      });
 
       renderProducts(allProducts);
     })

@@ -801,17 +801,6 @@ section:nth-of-type(even) {
   margin-bottom: 15px;
 }
 
-.error-box {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.35);
-  color: #ef4444;
-  padding: 16px 18px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
 .map-container {
   height: 450px;
   border: 1px solid var(--border);
